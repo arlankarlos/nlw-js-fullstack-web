@@ -5,15 +5,36 @@ import { InOrbitIcon } from './in-orbit-icon'
 import { Progress, ProgressIndicator } from './ui/progress-bar'
 import { Separator } from './ui/separator'
 import { OutlineButton } from './ui/outline-button'
+import { useQuery } from '@tanstack/react-query'
+import { getSummary } from '../http/get-summary'
+import dayjs from 'dayjs'
+import ptBR from 'dayjs/locale/pt-br'
+
+dayjs.locale(ptBR)
 
 export function Summary() {
+    const { data } = useQuery({
+        queryKey: ['summary'],
+        queryFn: getSummary,
+        staleTime: 1000 * 60, // 60 seconds
+    })
+
+    if (!data) {
+        return null
+    }
+
+    const firstDayOfTheWeek = dayjs().startOf('week').format('D MMM')
+    const lastDayOfTheWeek = dayjs().endOf('week').format('D MMM')
+
+    const completedPercentege = Math.round((data.completed / data.total) * 100)
+
     return (
         <div className="py-10 max-w-[480px] px-5 mx-auto flex flex-col gap-6">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <InOrbitIcon />
-                    <span className="text-lg font-semibold">
-                        05 a 10 agosto
+                    <span className="text-lg font-semibold capitalize">
+                        {firstDayOfTheWeek} - {lastDayOfTheWeek}
                     </span>
                 </div>
                 <DialogTrigger asChild>
@@ -25,15 +46,20 @@ export function Summary() {
             </div>
             <div className="flex flex-col gap-3">
                 <Progress max={15} value={8}>
-                    <ProgressIndicator style={{ width: '50%' }} />
+                    <ProgressIndicator
+                        style={{ width: `${completedPercentege}%` }}
+                    />
                 </Progress>
                 <div className="flex items-center justify-between text-xs text-zinc-400">
                     <span>
-                        Você completou <span className="text-zinc-100">8 </span>
-                        de <span className="text-zinc-100">15</span> metas essa
-                        semana.
+                        Você completou{' '}
+                        <span className="text-zinc-100">
+                            {data?.completed}{' '}
+                        </span>
+                        de <span className="text-zinc-100">{data?.total}</span>{' '}
+                        metas essa semana.
                     </span>
-                    <span> 58%</span>
+                    <span>{completedPercentege}%</span>
                 </div>
             </div>
             <Separator />
